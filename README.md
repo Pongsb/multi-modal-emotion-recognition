@@ -1,427 +1,428 @@
 # Multi-Modal Emotion Recognition
 
-A comprehensive emotion recognition system that combines video and audio modalities using deep learning. This project includes data preprocessing tools, model training pipelines, a FastAPI backend for inference, and a React frontend for visualization.
+## Overview
 
-## Table of Contents
+This repository contains a full-stack multi-modal emotion recognition system that combines video and audio signals for emotion classification. The project includes dataset preprocessing utilities, feature extraction pipelines, deep learning training scripts, a FastAPI inference backend, a React/Vite frontend, and Docker-based deployment configuration.
 
-- [Project Overview](#project-overview)
-- [Python Utilities](#python-utilities)
-- [Backend Setup](#backend-setup)
-- [Frontend Setup](#frontend-setup)
-- [Docker Deployment](#docker-deployment)
-- [Project Structure](#project-structure)
+The system is designed around a two-stream pipeline:
 
-## Project Overview
+1. Extract visual representations from video frames.
+2. Extract audio representations from speech signals.
+3. Fuse both modalities using an attention-based cross-modal model.
+4. Predict emotion probabilities across six standardized emotion classes.
 
-This system performs multi-modal emotion recognition by:
-1. **Extracting video features** using Vision Transformer (ViViT) embeddings from video frames
-2. **Extracting audio features** using Wav2Vec2-based emotion embeddings from audio tracks
-3. **Fusing both modalities** through attention-based cross-modal fusion
-4. **Classifying emotions** into 6 categories: Neutral, Happy, Sad, Angry, Fearful, and Disgusted
+The repository is organized for public technical review. Large datasets, generated feature files, model checkpoints, raw media files, and runtime artifacts should be excluded from version control unless they are intentionally provided as small reproducible samples.
 
-The model is trained on datasets like RAVDESS and CREMA-D with careful preprocessing and data augmentation strategies.
+## Technical Focus
 
-### Emotion Classes
+Multi-modal emotion recognition combines computer vision, speech representation learning, deep learning, and web application deployment. This project demonstrates how a machine learning pipeline can be connected to a usable inference application through a backend API and frontend interface.
 
-The system recognizes **6 emotion categories**:
+Core technical areas include:
 
-| Class ID | Abbreviation | Full Name | Description |
-|----------|-------------|-----------|-------------|
-| 0 | NEU | Neutral | Calm, neutral emotional state |
-| 1 | HAP | Happy | Joyful, positive emotional state |
-| 2 | SAD | Sad | Unhappy, sorrowful emotional state |
-| 3 | ANG | Angry | Irritated, frustrated emotional state |
-| 4 | FEA | Fearful | Anxious, scared emotional state |
-| 5 | DIS | Disgusted | Repulsed, disgusted emotional state |
+- Video feature extraction from frame sequences
+- Audio feature extraction from speech signals
+- Cross-modal fusion for video-audio representation learning
+- Emotion classification with deep neural networks
+- Dataset preprocessing for RAVDESS and CREMA-D style datasets
+- Face bounding-box extraction and audio conversion workflows
+- FastAPI-based model inference service
+- React/Vite frontend for video upload and prediction display
+- Docker and Docker Compose deployment
 
-**Note**: The model outputs probability scores for all 6 classes, allowing for multi-label interpretation and confidence analysis.
+## Skills & Technologies
 
-#### Dataset Emotion Mappings
+![Python](https://img.shields.io/badge/Python-Deep%20Learning-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-Model%20Training-orange)
+![Transformers](https://img.shields.io/badge/Transformers-Feature%20Extraction-purple)
+![FastAPI](https://img.shields.io/badge/FastAPI-Inference%20API-green)
+![React](https://img.shields.io/badge/React-Frontend%20UI-blue)
+![Vite](https://img.shields.io/badge/Vite-Frontend%20Build-yellow)
+![Docker](https://img.shields.io/badge/Docker-Deployment-lightgrey)
+![Computer Vision](https://img.shields.io/badge/Computer%20Vision-Video%20Features-darkgreen)
+![Speech Processing](https://img.shields.io/badge/Speech%20Processing-Audio%20Features-red)
 
-**RAVDESS Dataset** (originally 8 emotions):
-- **Original emotions**: calm, happy, sad, angry, fearful, surprise, disgust, neutral
-- **Mapped to 6 classes**: calm → NEU, happy → HAP, sad → SAD, angry → ANG, fearful → FEA, surprise → removed, disgust → DIS, neutral → NEU
+**Core skills:** `Python`, `PyTorch`, `Deep Learning`, `Multi-Modal Learning`, `Computer Vision`, `Speech Processing`, `Transformers`, `ViViT`, `Wav2Vec2`, `Cross-Modal Fusion`, `FastAPI`, `React`, `Vite`, `Tailwind CSS`, `Docker`, `Docker Compose`, `FFmpeg`, `Model Inference`, `Technical Documentation`
 
-**CREMA-D Dataset** (originally 6 emotions):
-- **Original emotions**: happy, sad, anger, fear, disgust, neutral
-- **Mapped to 6 classes**: happy → HAP, sad → SAD, anger → ANG, fear → FEA, disgust → DIS, neutral → NEU
+## System Pipeline
 
-Both datasets are standardized to the same 6 emotion classes for unified model training and inference.
-
-## Python Utilities
-
-### Core Python Scripts
-
-#### **`video_extractor.py`**
-Extracts video frame embeddings using ViViT (Vision Video Transformer) model.
-- **Functionality**: Converts video frames into 768-dimensional embeddings by tokenizing spatial-temporal patches (tubelets)
-- **Key Classes**: 
-  - `TubeletEmbedder`: Converts video frames into patch embeddings
-  - `PreNorm`: Normalization wrapper for attention layers
-  - `Attention`: Multi-head self-attention mechanism
-- **Output**: `.npy` files with video features of shape `(sequence_length, 768)`
-
-#### **`voice_extractor.py`**
-Extracts audio emotion embeddings using pre-trained Wav2Vec2 model.
-- **Functionality**: Processes audio files and outputs 1024-dimensional emotion-aware embeddings
-- **Model**: `audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim` (HuggingFace)
-- **Features**:
-  - Batched processing with optimal GPU memory management
-  - L2-normalization for consistency
-  - Float16 precision for efficiency
-- **Output**: `.npy` files with audio features of shape `(1024,)`
-
-#### **`train.py` & `train2.py`**
-Train the multi-modal emotion classifier.
-- **Functionality**: Implements a CrossModalFusion module that combines video and audio features
-- **Key Components**:
-  - `CrossModalFusion`: Attention-based fusion of video sequences and audio embeddings
-  - `FocalLoss`: Handles class imbalance in emotion datasets
-  - `MultimodalEmotionModel`: Final classifier combining both modalities
-- **Features**:
-  - Class weight computation for imbalanced datasets
-  - Learning rate scheduling with `ReduceLROnPlateau`
-  - Precision, recall, F1-score metrics
-  - Interpretability via attention weights (train2.py)
-- **Output**: Trained model weights saved as `.pth` files in `training_runs/` or `training_runs_2/`
-
-#### **`test.py`**
-Validates extracted features and analyzes dataset statistics.
-- **Functionality**: Loads video and audio feature files and prints their shapes
-- **Use**: Check feature extraction quality and dataset consistency
-- **Output**: Console output showing feature dimensions and counts
-
-#### **`check.py`**
-Verifies GPU/CUDA availability and setup.
-- **Functionality**: Tests PyTorch and CUDA configuration
-- **Use**: Ensure GPU is properly configured before running intensive jobs
-
-#### **CREMA-D Dataset Processing**
-
-**`cremad_extract_bboxes.py`**
-- **Functionality**: Detects and extracts face bounding boxes from CREMA-D video files using YOLOv11n-face
-- **Input**: Video files (`.flv` format from CREMA-D)
-- **Output**: Bounding box coordinates saved in `extracted_bboxes/` directory
-- **Requirements**: YOLO model auto-downloaded from HuggingFace (`AdamCodd/YOLOv11n-face-detection`)
-
-**`cremad_video_to_audio_converter.py`**
-- **Functionality**: Extracts audio tracks from CREMA-D videos using FFmpeg
-- **Input**: CREMA-D video files
-- **Output**: MP3 audio files in `extracted_audio/` directory
-- **Features**: Configurable bitrate (default 320k), error handling
-
-**`cremad_bbox_converter.py`**
-- **Functionality**: Converts extracted bounding boxes into standardized format for model training
-
-#### **RAVDESS Dataset Processing**
-
-**`ravdess_extract_bboxes.py`**
-- **Functionality**: Extracts face bounding boxes from RAVDESS video files using YOLOv11n-face
-- **Input**: RAVDESS video files (organized in subdirectories)
-- **Output**: Bounding box coordinates in `extracted_bboxes/` directory
-- **GPU Support**: Automatically uses CUDA if available
-
-**`ravdess_video_to_audio_converter.py`**
-- **Functionality**: Extracts audio from RAVDESS videos using FFmpeg
-- **Output**: Audio files in standardized format in `extracted_audio/`
-
-**`ravdess_bbox_converter.py`**
-- **Functionality**: Converts RAVDESS bounding boxes to training format
-
-#### **`main.py`**
-Simple entry point script for the project.
-
----
-
-## Backend Setup
-
-### Prerequisites
-
-- Python 3.9+
-- CUDA 11.8 or 12.x (for GPU inference)
-- FFmpeg
-
-### Local Development
-
-1. **Install Dependencies**
-   ```bash
-   cd back-end
-   pip install -r requirements.txt
-   ```
-
-2. **Run the FastAPI Server**
-   ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-3. **API will be available at**: `http://localhost:8000`
-
-### Endpoints
-
-- **`GET /`** — Info (not defined)
-- **`GET /ping`** — Health check, returns `{"message": "pong"}`
-- **`GET /health`** — Returns `{"status": "ok"}`
-- **`POST /infer`** — Upload a video file for emotion inference
-  - **Parameters**: 
-    - `file` (multipart/form-data): Video file to analyze
-    - `sample_frames` (optional query param): Number of frames to sample (default: 32)
-  - **Returns**: Predicted emotion and confidence scores
-- **`POST /infer/predict`** — Upload video and get emotion predictions
-  - **Parameters**: `file` (multipart/form-data)
-  - **Returns**: Emotion scores for all 6 classes
-
-### Example API Call
-
-```bash
-curl -F "file=@sample.mp4" http://localhost:8000/infer/predict
+```text
+Input Video
+    │
+    ├── Video stream
+    │      └── Frame sampling / face-focused preprocessing
+    │              └── ViViT-style video embedding extraction
+    │
+    ├── Audio stream
+    │      └── Audio extraction with FFmpeg
+    │              └── Wav2Vec2-based audio embedding extraction
+    │
+    └── Multi-modal model
+           └── Attention-based cross-modal fusion
+                   └── Emotion probability prediction
 ```
 
-### Docker
+## Emotion Classes
 
-Build and run the backend in Docker:
+The model uses a standardized six-class emotion label space.
 
-```bash
-# Build the container from the back-end directory
-docker build -t mm-emotion-backend:latest .
+| Class ID | Label | Emotion | Description |
+|---:|---|---|---|
+| 0 | `NEU` | Neutral | Calm or neutral emotional state |
+| 1 | `HAP` | Happy | Positive or joyful emotional state |
+| 2 | `SAD` | Sad | Sorrowful or unhappy emotional state |
+| 3 | `ANG` | Angry | Angry or frustrated emotional state |
+| 4 | `FEA` | Fearful | Fearful or anxious emotional state |
+| 5 | `DIS` | Disgusted | Disgusted or repulsed emotional state |
 
-# Run the container
-docker run --rm -p 8000:8000 mm-emotion-backend:latest
+### Dataset Label Mapping
 
-# Interactive debugging shell
-docker run --rm -it --entrypoint /bin/bash mm-emotion-backend:latest
-```
+| Dataset | Original Label Set | Standardization Strategy |
+|---|---|---|
+| RAVDESS | calm, happy, sad, angry, fearful, surprise, disgust, neutral | calm and neutral are mapped to `NEU`; surprise is excluded; remaining labels are mapped to the six-class schema |
+| CREMA-D | happy, sad, anger, fear, disgust, neutral | labels are directly mapped to the six-class schema |
 
-### Backend Troubleshooting
+## Project Components
 
-- **Package installation errors**: Clear Docker cache with `docker builder prune` or update base image tags
-- **GPU access**: Ensure Docker has GPU access by installing nvidia-docker and using appropriate runtime flags
-- **Memory issues**: Adjust `sample_frames` query parameter to reduce memory usage
-- **Production**: Use gunicorn with Uvicorn workers: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app`
+| Component | Location | Purpose | Main Technologies |
+|---|---|---|---|
+| Python feature extraction and training utilities | repository root | Prepare features, train the multi-modal model, and validate intermediate artifacts | `Python`, `PyTorch`, `Transformers`, `FFmpeg` |
+| Backend API | `back-end/` | Serve model inference through HTTP endpoints | `FastAPI`, `Uvicorn`, `PyTorch` |
+| Frontend application | `front-end/` | Upload videos and visualize emotion predictions | `React`, `Vite`, `Tailwind CSS` |
+| Deployment configuration | root / service folders | Run services with Docker and Docker Compose | `Docker`, `Docker Compose`, `nginx` |
 
----
+## Key Scripts
 
-## Frontend Setup
+| Script | Purpose |
+|---|---|
+| `video_extractor.py` | Extracts video embeddings from frame sequences using a ViViT-style video representation pipeline |
+| `voice_extractor.py` | Extracts audio emotion embeddings using a Wav2Vec2-based speech representation model |
+| `train.py` | Trains the first version of the multi-modal emotion classifier |
+| `train2.py` | Trains an enhanced model version with attention-based interpretability support |
+| `test.py` | Validates extracted feature shapes and dataset consistency |
+| `check.py` | Checks PyTorch and CUDA availability |
+| `cremad_video_to_audio_converter.py` | Extracts audio from CREMA-D video files |
+| `cremad_extract_bboxes.py` | Extracts face bounding boxes from CREMA-D videos |
+| `cremad_bbox_converter.py` | Converts CREMA-D bounding-box outputs into a standardized training format |
+| `ravdess_video_to_audio_converter.py` | Extracts audio from RAVDESS video files |
+| `ravdess_extract_bboxes.py` | Extracts face bounding boxes from RAVDESS videos |
+| `ravdess_bbox_converter.py` | Converts RAVDESS bounding-box outputs into a standardized training format |
 
-### Prerequisites
+## Model Overview
 
-- Node.js 18+
-- npm or yarn
+The project uses a multi-modal architecture that combines video and audio embeddings.
 
-### Local Development
+### Video Stream
 
-1. **Navigate to frontend directory and install dependencies**
-   ```bash
-   cd front-end
-   npm ci
-   ```
+- Extracts frame-level or sequence-level visual features.
+- Uses a ViViT-style representation approach for spatio-temporal video modeling.
+- Produces high-dimensional visual embeddings for downstream fusion.
 
-2. **Start the development server**
-   ```bash
-   npm run dev
-   ```
+### Audio Stream
 
-3. **App will be available at**: `http://localhost:5173`
+- Extracts speech-based emotional representations from audio tracks.
+- Uses a Wav2Vec2-based pretrained model for emotion-aware audio embeddings.
+- Produces fixed-size audio vectors for fusion with video features.
 
-### Build for Production
+### Fusion and Classification
 
-```bash
-npm run build
-```
+- Combines video and audio features through a cross-modal fusion module.
+- Uses attention-based fusion to integrate complementary modality information.
+- Predicts confidence scores for all six emotion classes.
+- Supports class-imbalance handling through focal-loss-style training.
 
-Artifacts will be in the `dist/` directory.
+## Repository Structure
 
-### Docker
-
-Build and run the frontend in Docker:
-
-```bash
-# Build the image
-docker build -t mmer-frontend:latest .
-
-# Run the container
-docker run --rm -p 8080:80 mmer-frontend:latest
-```
-
-Frontend will be available at: `http://localhost:8080`
-
-### Using shadcn-ui Components
-
-To add additional UI components from shadcn:
-
-```bash
-cd front-end
-npm install
-
-# Initialize shadcn-ui
-npx shadcn-ui@latest init
-
-# Add specific components
-npx shadcn-ui@latest add button
-npx shadcn-ui@latest add card
-```
-
-### Frontend Features
-
-- **Video Upload**: Users can upload videos for emotion analysis
-- **Real-time Inference**: Integration with backend API for live predictions
-- **Results Display**: Visualize emotion predictions with confidence scores
-- **Responsive Design**: Built with Tailwind CSS for mobile and desktop
-
----
-
-## Docker Deployment
-
-Use Docker Compose to run both services together.
-
-### Production Build
-
-```bash
-# Build images and start containers
-docker-compose up --build -d
-
-# Stop services
-docker-compose down
-```
-
-**Access the application**:
-- Frontend: `http://localhost:80`
-- API: `http://localhost:80/api`
-- Direct backend: `http://localhost:8000` (if backend exposed)
-
-### Development with Hot Reload
-
-```bash
-# Build and run with live code changes
-docker-compose -f docker-compose.dev.yml up --build
-
-# Or in detached mode
-docker-compose -f docker-compose.dev.yml up --build -d
-
-# View logs
-docker-compose -f docker-compose.dev.yml logs -f
-```
-
-### Docker Compose Notes
-
-- **`docker-compose.yml`**: Production setup with nginx reverse proxy on port 80
-  - Frontend served on `/`
-  - Backend API routed to `/api`
-  
-- **`docker-compose.dev.yml`**: Development setup with:
-  - Source code volumes for live reload
-  - `npm run dev` for frontend hot reloading
-  - `start.sh --reload` for backend hot reloading
-  
-- **`docker-compose.override.yml`**: Optional custom configurations for local overrides
-
----
-
-## Project Structure
-
-```
+```text
 multi-modal-emotion-recognition/
-├── back-end/                      # FastAPI backend service
+├── README.md
+├── back-end/
 │   ├── app/
-│   │   ├── main.py               # FastAPI app initialization
-│   │   ├── inference.py          # Inference engine for emotion prediction
-│   │   ├── routers/              # API endpoints
-│   │   ├── libs/                 # Shared utilities
-│   │   └── api/                  # API-specific modules
+│   │   ├── main.py
+│   │   ├── inference.py
+│   │   ├── routers/
+│   │   ├── libs/
+│   │   └── api/
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   └── start.sh
-│
-├── front-end/                     # React + Vite frontend
+├── front-end/
 │   ├── src/
-│   │   ├── App.tsx               # Main React component
-│   │   ├── components/           # Reusable UI components
-│   │   ├── lib/                  # Utility functions
-│   │   └── styles/               # CSS/Tailwind styles
+│   │   ├── App.tsx
+│   │   ├── components/
+│   │   ├── lib/
+│   │   └── styles/
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── tailwind.config.cjs
 │   ├── Dockerfile
 │   └── nginx.conf
-│
-├── Python Utilities (Root)
-│   ├── video_extractor.py        # ViViT-based video feature extraction
-│   ├── voice_extractor.py        # Wav2Vec2-based audio feature extraction
-│   ├── train.py                  # Model training pipeline (v1)
-│   ├── train2.py                 # Advanced training with interpretability
-│   ├── test.py                   # Feature validation
-│   ├── check.py                  # CUDA/GPU verification
-│   ├── cremad_extract_bboxes.py  # CREMA-D face detection
-│   ├── cremad_video_to_audio_converter.py
-│   ├── cremad_bbox_converter.py
-│   ├── ravdess_extract_bboxes.py # RAVDESS face detection
-│   ├── ravdess_video_to_audio_converter.py
-│   ├── ravdess_bbox_converter.py
-│   └── main.py
-│
-├── Datasets
-│   ├── audio_features/           # Extracted audio embeddings (.npy)
-│   ├── video_features/           # Extracted video embeddings (.npy)
-│   ├── extracted_audio/          # Raw extracted audio files
-│   ├── extracted_bboxes/         # Face bounding box data
-│   └── extracted_faces_videos/   # Cropped face videos
-│
-├── Models
-│   ├── models/                   # Pre-trained model weights
-│   ├── training_runs/            # Training output (v1)
-│   └── training_runs_2/          # Training output with interpretability
-│
-└── Configuration
-    ├── docker-compose.yml        # Production compose
-    ├── docker-compose.dev.yml    # Development compose
-    ├── nginx.conf                # Reverse proxy configuration
-    ├── requirements.txt          # Python dependencies
-    └── pyproject.toml            # Project metadata
-
+├── video_extractor.py
+├── voice_extractor.py
+├── train.py
+├── train2.py
+├── test.py
+├── check.py
+├── cremad_extract_bboxes.py
+├── cremad_video_to_audio_converter.py
+├── cremad_bbox_converter.py
+├── ravdess_extract_bboxes.py
+├── ravdess_video_to_audio_converter.py
+├── ravdess_bbox_converter.py
+├── docker-compose.yml
+├── docker-compose.dev.yml
+├── nginx.conf
+├── requirements.txt
+└── pyproject.toml
 ```
 
----
+## Excluded Runtime Artifacts
 
-## Workflow Example
+The following directories or file types are typically generated during preprocessing, training, or inference and should not be committed unless intentionally reduced to small reproducible samples:
 
-### 1. Prepare Dataset
+```text
+audio_features/
+video_features/
+extracted_audio/
+extracted_bboxes/
+extracted_faces_videos/
+models/
+training_runs/
+training_runs_2/
+*.pth
+*.pt
+*.npy
+*.mp4
+*.flv
+*.mp3
+```
+
+## Backend Setup
+
+### Requirements
+
+- Python 3.9+
+- FFmpeg
+- PyTorch-compatible environment
+- CUDA-capable GPU for accelerated inference or training, when available
+
+### Install and Run
 
 ```bash
-# Extract audio from RAVDESS videos
-python ravdess_video_to_audio_converter.py
+cd back-end
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# Extract faces (bounding boxes)
+The API is available at:
+
+```text
+http://localhost:8000
+```
+
+### Main API Endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/ping` | Basic health check |
+| `GET` | `/health` | Service status check |
+| `POST` | `/infer` | Upload a video file for emotion inference |
+| `POST` | `/infer/predict` | Upload a video file and return prediction scores |
+
+Example request:
+
+```bash
+curl -F "file=@sample.mp4" http://localhost:8000/infer/predict
+```
+
+## Frontend Setup
+
+### Requirements
+
+- Node.js 18+
+- npm or yarn
+
+### Install and Run
+
+```bash
+cd front-end
+npm ci
+npm run dev
+```
+
+The development app is available at:
+
+```text
+http://localhost:5173
+```
+
+### Production Build
+
+```bash
+cd front-end
+npm run build
+```
+
+Build artifacts are generated in:
+
+```text
+front-end/dist/
+```
+
+## Docker Deployment
+
+### Production Compose
+
+```bash
+docker-compose up --build -d
+```
+
+Stop services:
+
+```bash
+docker-compose down
+```
+
+Typical local access points:
+
+```text
+Frontend: http://localhost
+API route: http://localhost/api
+Direct backend: http://localhost:8000
+```
+
+### Development Compose
+
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+View logs:
+
+```bash
+docker-compose -f docker-compose.dev.yml logs -f
+```
+
+## Reproducible Workflow
+
+### 1. Prepare Dataset Assets
+
+```bash
+python ravdess_video_to_audio_converter.py
 python ravdess_extract_bboxes.py
+python ravdess_bbox_converter.py
+```
+
+For CREMA-D style preprocessing:
+
+```bash
+python cremad_video_to_audio_converter.py
+python cremad_extract_bboxes.py
+python cremad_bbox_converter.py
 ```
 
 ### 2. Extract Features
 
 ```bash
-# Extract video embeddings (ViViT)
 python video_extractor.py
-
-# Extract audio embeddings (Wav2Vec2)
 python voice_extractor.py
 ```
 
-### 3. Train Model
+### 3. Validate Feature Files
 
 ```bash
-# Train multi-modal emotion classifier
+python test.py
+```
+
+### 4. Check GPU Environment
+
+```bash
+python check.py
+```
+
+### 5. Train the Model
+
+```bash
 python train2.py --epochs 50 --batch-size 32 --learning-rate 1e-4
 ```
 
-### 4. Run Backend & Frontend
+### 6. Run the Application
 
 ```bash
-# Production deployment
 docker-compose up --build
-
-# Or development with hot reload
-docker-compose -f docker-compose.dev.yml up --build
 ```
 
-### 5. Use the Application
+Then open:
 
-- Open `http://localhost` in your browser
-- Upload a video file
-- View emotion predictions from the model
+```text
+http://localhost
+```
+
+## Results Summary
+
+The repository documents an end-to-end implementation pipeline for video-audio emotion recognition. It includes preprocessing scripts, feature extraction utilities, model training code, backend inference endpoints, frontend visualization, and Docker deployment support.
+
+Quantitative results should be reported in project logs or result summaries when available. If model checkpoints or benchmark outputs are not included, they can be regenerated using the preprocessing and training workflow above.
+
+## Limitations and Notes
+
+- Large datasets such as RAVDESS and CREMA-D are not included.
+- Generated `.npy` feature files and trained model weights should normally be excluded from Git.
+- Local performance depends on GPU availability, CUDA configuration, batch size, and sampled frame count.
+- Model predictions should be interpreted as confidence scores, not definitive psychological assessments.
+- Dataset licensing and usage terms should be reviewed before redistributing any dataset-derived assets.
+
+## Suggested `.gitignore`
+
+```gitignore
+# Python
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+front-end/dist/
+
+# Build and runtime files
+build/
+dist/
+*.log
+*.out
+*.err
+
+# Model and generated ML artifacts
+*.pth
+*.pt
+*.onnx
+*.npy
+models/
+training_runs/
+training_runs_2/
+
+# Dataset and media artifacts
+audio_features/
+video_features/
+extracted_audio/
+extracted_bboxes/
+extracted_faces_videos/
+*.mp4
+*.flv
+*.mp3
+*.wav
+
+# Docker / local override files
+docker-compose.override.yml
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+```
+
+## Skills / Tags
+
+`Python` `PyTorch` `Deep Learning` `Multi-Modal Learning` `Computer Vision` `Speech Processing` `Transformers` `ViViT` `Wav2Vec2` `Cross-Modal Fusion` `Focal Loss` `FastAPI` `Uvicorn` `React` `Vite` `Tailwind CSS` `Docker` `Docker Compose` `FFmpeg` `CUDA` `Model Inference` `Technical Documentation`
